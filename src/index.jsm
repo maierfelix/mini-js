@@ -71,6 +71,8 @@ const NN_MEMBER_EXPRESSION = idx++;
 const NN_COMPUTED_MEMBER_EXPRESSION = idx++;
 const NN_OBJECT_EXPRESSION = idx++;
 const NN_OBJECT_PROPERTY = idx++;
+const NN_ARRAY_EXPRESSION = idx++;
+const NN_ARRAY_ELEMENT = idx++;
 const NN_CALL_EXPRESSION = idx++;
 const NN_WHILE = idx++;
 const NN_RETURN = idx++;
@@ -236,7 +238,7 @@ function scan(str) {
   let column = 0;
   let length = str.length;
 
-  let tokens = __imports.createArray();
+  let tokens = [];
 
   function next() {
     ii++;
@@ -461,7 +463,7 @@ function parse(tkns) {
 };
 
 function parseStatementList() {
-  let list = __imports.createArray();
+  let list = [];
   while (true) {
     if (!current) break;
     if (peek(PP_RBRACE)) break;
@@ -559,7 +561,7 @@ function parseIfBody() {
     expect(PP_RBRACE);
   // short if
   } else {
-    node = __imports.createArray();
+    node = [];
     node.push(parseExpression());
     eat(PP_SEMIC);
   }
@@ -596,7 +598,7 @@ function parseFunctionDeclaration() {
 };
 
 function parseFunctionParameters() {
-  let params = __imports.createArray();
+  let params = [];
   expect(PP_LPAREN);
   while (true) {
     if (peek(PP_RPAREN)) break;
@@ -653,7 +655,7 @@ function parseCallExpression(id) {
 };
 
 function parseCallParameters() {
-  let params = __imports.createArray();
+  let params = [];
   expect(PP_LPAREN);
   while (true) {
     if (peek(PP_RPAREN)) break;
@@ -684,7 +686,7 @@ function parseContinue() {
 function parseObjectExpression() {
   let node = {
     kind: NN_OBJECT_EXPRESSION,
-    properties: __imports.createArray()
+    properties: []
   };
   expect(PP_LBRACE);
   while (true) {
@@ -762,6 +764,9 @@ function parsePrefix() {
   if (peek(PP_LBRACE)) {
     return (parseObjectExpression());
   }
+  if (peek(PP_LBRACK)) {
+    return (parseArrayExpression());
+  }
   if (eat(PP_LPAREN)) {
     let node = parseExpression();
     expect(PP_RPAREN);
@@ -771,6 +776,25 @@ function parsePrefix() {
     return (parseUnaryPrefixExpression());
   }
   return (parseStatement());
+};
+
+function parseArrayExpression() {
+  expect(PP_LBRACK);
+  let node = {
+    kind: NN_ARRAY_EXPRESSION,
+    elements: []
+  };
+  while (true) {
+    if (peek(PP_RBRACK)) break;
+    let element = {
+      kind: NN_ARRAY_ELEMENT,
+      value: parseExpression()
+    };
+    node.elements.push(element);
+    if (!eat(PP_COMMA)) break;
+  };
+  expect(PP_RBRACK);
+  return (node);
 };
 
 function parseExpression() {
@@ -990,6 +1014,19 @@ function generateNode(node) {
       ii++;
     };
     write(" }");
+  }
+  else if (kind == NN_ARRAY_EXPRESSION) {
+    write("[");
+    let ii = 0;
+    while (ii < node.elements.length) {
+      let element = node.elements[ii];
+      generateNode(element.value);
+      if (ii + 1 < node.elements.length) {
+        write(", ");
+      }
+      ii++;
+    };
+    write("]");
   }
   else if (kind == NN_LITERAL) {
     write(node.value);
