@@ -10,5 +10,19 @@ run "node build"
 have fun with "bin/stub"
 ````
 
+Usage example:
+````js
+let compiler = require("./bin/stub");
+
+// first argument is a string to compile
+// second argument is the standard library
+compiler.compile("let a = 10;", {
+  console: console,
+  error: function(msg) {
+    console.error("Error: " + msg);
+  }
+});
+````
+
 Currently missing:
  - Precedence based expression parsing
