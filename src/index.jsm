@@ -6,7 +6,7 @@ const TT_UNKNOWN = idx++;
 // keywords
 const KK_LET = idx++;
 const KK_CONST = idx++;
-const KK_CLASS = idx++;
+const KK_EXPORT = idx++;
 const KK_FUNCTION = idx++;
 const KK_IF = idx++;
 const KK_ELSE = idx++;
@@ -62,6 +62,7 @@ const NN_PROGRAM = idx++;
 const NN_IF = idx++;
 const NN_LET = idx++;
 const NN_CONST = idx++;
+const NN_EXPORT = idx++;
 const NN_FUNCTION = idx++;
 const NN_UNARY_PREFIX_EXPRESSION = idx++;
 const NN_UNARY_POSTFIX_EXPRESSION = idx++;
@@ -168,7 +169,7 @@ function processToken(tokens, value, line, column) {
   if (value == "let") kind = KK_LET;
   else if (value == "new") kind = KK_NEW;
   else if (value == "const") kind = KK_CONST;
-  else if (value == "class") kind = KK_CLASS;
+  else if (value == "export") kind = KK_EXPORT;
   else if (value == "function") kind = KK_FUNCTION;
   else if (value == "if") kind = KK_IF;
   else if (value == "else") kind = KK_ELSE;
@@ -485,6 +486,8 @@ function parseStatement() {
     node = parseIfStatement();
   } else if (peek(KK_WHILE)) {
     node = parseWhileStatement();
+  } else if (peek(KK_EXPORT)) {
+    node = parseExport();
   } else {
     node = parseExpression();
     if (node == null) {
@@ -492,6 +495,18 @@ function parseStatement() {
     }
   }
   eat(PP_SEMIC);
+  return (node);
+};
+
+function parseExport() {
+  expect(KK_EXPORT);
+  let node = {
+    kind: NN_EXPORT,
+    init: null
+  };
+  if (peek(KK_LET) || peek(KK_CONST) || peek(KK_FUNCTION)) {
+    node.init = parseStatement();
+  }
   return (node);
 };
 
@@ -845,7 +860,7 @@ function generateBody(body) {
   while (ii < body.length) {
     generateNode(body[ii]);
     ii++;
-    if (ii + 1 <= body.length) write(";");
+    write(";");
   };
 };
 
@@ -987,12 +1002,29 @@ function generateNode(node) {
     if (isChar) write('"');
     else write("'");
   }
+  else if (kind == NN_EXPORT) {
+    let init = node.init;
+    write("module.exports.");
+    write(init.id);
+    write(" = ");
+    if (init.kind == NN_FUNCTION) {
+      generateNode(init);
+    }
+    else if (init.kind == NN_LET || init.kind == NN_CONST) {
+      generateNode(init.init);
+    }
+    else {
+      __imports.error("Cannot export node kind " + init.kind + "!");
+    }
+  }
   else {
     __imports.error("Unknown node kind " + node.kind + "!");
   }
 };
 
-__exports.compile = function(str) {
+let __imports = null;
+export function compile(str, imports) {
+  __imports = imports;
   let tokens = scan(str);
   let ast = parse(tokens);
   return (generate(ast));
