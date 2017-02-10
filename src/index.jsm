@@ -80,7 +80,7 @@ enum TokenKind {
   NN_STRING_LITERAL
 };
 
-// ## HALP METHODS ##
+// ## HALP FUNCTIONS ##
 
 function isBlank(cc) {
   return (
@@ -165,6 +165,52 @@ function isLiteral(token) {
   );
 };
 
+function isPunctuatorChar(ch) {
+  return (
+    ch == "(" ||
+    ch == ")" ||
+    ch == "[" ||
+    ch == "]" ||
+    ch == "{" ||
+    ch == "}" ||
+    ch == "." ||
+    ch == ":" ||
+    ch == "," ||
+    ch == ";" ||
+    ch == "*" ||
+    ch == "/"
+  );
+};
+
+function isOperatorChar(ch) {
+  return (
+    ch == "+" ||
+    ch == "-" ||
+    ch == "!" ||
+    ch == "=" ||
+    ch == "|" ||
+    ch == "&" ||
+    ch == ">" ||
+    ch == "<"
+  );
+};
+
+function isOperator(str) {
+  if (str.length == 1) {
+    return (isOperatorChar(str));
+  }
+  return (
+    str == "++" ||
+    str == "--" ||
+    str == "==" ||
+    str == "!=" ||
+    str == "||" ||
+    str == "&&" ||
+    str == ">=" ||
+    str == "<="
+  );
+};
+
 function processToken(tokens, value, line, column) {
   let kind = .TT_UNKNOWN;
   // keywords
@@ -246,6 +292,16 @@ function scan(str) {
     column++;
   };
 
+  // placed here to have right context to next()
+  function processOperator(ch, second, line, column) {
+    if (second && isOperator(ch + second)) {
+      next();
+      processToken(tokens, ch + second, line, column);
+    } else if (isOperator(ch)) {
+      processToken(tokens, ch, line, column);
+    }
+  };
+
   while (true) {
     next();
     let ch = str.charAt(ii);
@@ -324,116 +380,14 @@ function scan(str) {
       }
       continue;
     }
-    if (
-      ch == "(" ||
-      ch == ")" ||
-      ch == "[" ||
-      ch == "]" ||
-      ch == "{" ||
-      ch == "}" ||
-      ch == "." ||
-      ch == ":" ||
-      ch == "," ||
-      ch == ";" ||
-      ch == "*" ||
-      ch == "/"
-    ) {
+    if (isPunctuatorChar(ch)) {
       let content = str.slice(ii, ii+1);
       processToken(tokens, content, line, column);
       continue;
     }
-    if (
-      ch == "+" ||
-      ch == "-" ||
-      ch == "!" ||
-      ch == "=" ||
-      ch == "|" ||
-      ch == "&" ||
-      ch == ">" ||
-      ch == "<"
-    ) {
+    if (isOperatorChar(ch)) {
       let second = str.slice(ii+1, ii+2);
-      // + # ++
-      if (ch == "+") {
-        if (ch + second == "++") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // - # --
-      else if (ch == "-") {
-        if (ch + second == "--") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // ! # !=
-      else if (ch == "!") {
-        if (ch + second == "!=") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // = # ==
-      else if (ch == "=") {
-        if (ch + second == "==") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // | # ||
-      else if (ch == "|") {
-        if (ch + second == "||") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // | # ||
-      else if (ch == "|") {
-        if (ch + second == "||") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // & # &&
-      else if (ch == "&") {
-        if (ch + second == "&&") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // > # >=
-      else if (ch == ">") {
-        if (ch + second == ">=") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
-      // < # <=
-      else if (ch == "<") {
-        if (ch + second == "<=") {
-          next();
-          processToken(tokens, ch + second, line, column);
-        } else {
-          processToken(tokens, ch, line, column);
-        }
-      }
+      processOperator(ch, second, line, column);
       continue;
     }
 
@@ -447,7 +401,8 @@ function scan(str) {
 
 };
 
-// scope related
+// ## SCOPE ##
+
 let scope = null;
 function Scope() {
   this.node = null;
@@ -487,6 +442,7 @@ function popScope() {
 let pindex = 0;
 let tokens = null;
 let current = null;
+
 function parse(tkns) {
   tokens = tkns;
   pindex = -1;
@@ -498,6 +454,37 @@ function parse(tkns) {
   pushScope(node);
   node.body = parseStatementList();
   return (node);
+};
+
+function peek(kind) {
+  return (current && current.kind == kind);
+};
+
+function next() {
+  pindex++;
+  current = tokens[pindex];
+};
+
+function expect(kind) {
+  if (current.kind != kind) {
+    __imports.error("Expected " + kind + " but got " + current.kind + " in " + current.line + ":" + current.column);
+  } else {
+    next();
+  }
+};
+
+function expectIdentifier() {
+  if (current.kind != .TT_IDENTIFIER) {
+    __imports.error("Expected " + .TT_IDENTIFIER + ":identifier but got " + current.kind + ":" + current.value);
+  }
+};
+
+function eat(kind) {
+  if (peek(kind)) {
+    next();
+    return (true);
+  }
+  return (false);
 };
 
 function parseStatementList() {
@@ -673,6 +660,66 @@ function parseEnumDeclaration() {
   expect(.PP_LBRACE);
   node.body = parseEnumBody();
   expect(.PP_RBRACE);
+  return (node);
+};
+
+function parseEnumExpression() {
+  let name = null;
+  let member = null;
+  let isShorty = eat(.PP_DOT);
+  // shorty, try to auto resolve enum
+  if (isShorty) {
+    expectIdentifier();
+    let nameToResolve = current.value;
+    let cscope = scope;
+    while (cscope != null) {
+      let sym = cscope.symbols;
+      let keys = Object.keys(sym);
+      let kk = 0;
+      while (kk < keys.length) {
+        let key = keys[kk];
+        let item = sym[key];
+        if (item.kind == .NN_ENUM) {
+          let jj = 0;
+          while (jj < item.body.length) {
+            let child = item.body[jj];
+            if (child.name == nameToResolve) {
+              name = item.name;
+              member = nameToResolve;
+              // break all loops
+              cscope = {parent:null}; kk = keys.length + 1; break;
+            }
+            jj++;
+          };
+        }
+        kk++;
+      };
+      cscope = cscope.parent;
+    };
+  } else {
+    name = current.value;
+    expect(.PP_DOT);
+  }
+  expectIdentifier();
+  let node = {
+    kind: .NN_ENUM_EXPRESSION,
+    value: null
+  };
+  // unfold enum
+  let resolve = scope.resolve(name);
+  if (resolve && resolve.kind == .NN_ENUM) {
+    let ii = 0;
+    let body = resolve.body;
+    while (ii < body.length) {
+      let child = body[ii];
+      if (child.name == member) {
+        node.value = child.init;
+        break;
+      }
+      ii++;
+    };
+  }
+  next();
   return (node);
 };
 
@@ -952,36 +999,7 @@ function parseStringLiteral() {
   return (node);
 };
 
-function expectIdentifier() {
-  if (current.kind != .TT_IDENTIFIER) {
-    __imports.error("Expected " + .TT_IDENTIFIER + ":identifier but got " + current.kind + ":" + current.value);
-  }
-};
-
-function peek(kind) {
-  return (current && current.kind == kind);
-};
-
-function next() {
-  pindex++;
-  current = tokens[pindex];
-};
-
-function expect(kind) {
-  if (current.kind != kind) {
-    __imports.error("Expected " + kind + " but got " + current.kind + " in " + current.line + ":" + current.column);
-  } else {
-    next();
-  }
-};
-
-function eat(kind) {
-  if (peek(kind)) {
-    next();
-    return (true);
-  }
-  return (false);
-};
+// ## GENERATOR ##
 
 let out = "";
 function write(str) {
@@ -1211,66 +1229,6 @@ function generateNode(node) {
   else {
     __imports.error("Unknown node kind " + node.kind + "!");
   }
-};
-
-function parseEnumExpression() {
-  let name = null;
-  let member = null;
-  let isShorty = eat(.PP_DOT);
-  // shorty, try to auto resolve enum
-  if (isShorty) {
-    expectIdentifier();
-    let nameToResolve = current.value;
-    let cscope = scope;
-    while (cscope != null) {
-      let sym = cscope.symbols;
-      let keys = Object.keys(sym);
-      let kk = 0;
-      while (kk < keys.length) {
-        let key = keys[kk];
-        let item = sym[key];
-        if (item.kind == .NN_ENUM) {
-          let jj = 0;
-          while (jj < item.body.length) {
-            let child = item.body[jj];
-            if (child.name == nameToResolve) {
-              name = item.name;
-              member = nameToResolve;
-              // break all loops
-              cscope = {parent:null}; kk = keys.length + 1; break;
-            }
-            jj++;
-          };
-        }
-        kk++;
-      };
-      cscope = cscope.parent;
-    };
-  } else {
-    name = current.value;
-    expect(.PP_DOT);
-  }
-  expectIdentifier();
-  let node = {
-    kind: .NN_ENUM_EXPRESSION,
-    value: null
-  };
-  // unfold enum
-  let resolve = scope.resolve(name);
-  if (resolve && resolve.kind == .NN_ENUM) {
-    let ii = 0;
-    let body = resolve.body;
-    while (ii < body.length) {
-      let child = body[ii];
-      if (child.name == member) {
-        node.value = child.init;
-        break;
-      }
-      ii++;
-    };
-  }
-  next();
-  return (node);
 };
 
 let __imports = null;
