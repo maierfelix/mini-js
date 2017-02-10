@@ -12,7 +12,7 @@ enum Direction {
   Left,
   Right
 }
-let dir = .Up || Direction.Down; // before compiling
+let dir = .Up || Direction.Right; // before compiling
 let dir = 0 || 3; // after compiling, unfolded
 ````
 Everything else is just plain minimal es5.
