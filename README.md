@@ -14,8 +14,7 @@ enum Direction {
   Left,
   Right
 }
-let dir = .Up || Direction.Right; // before compiling
-let dir = 0 || 3; // after compiling, unfolded
+let dir = .Up || Direction.Right;
 ````
 Compiles into:
 ````js
