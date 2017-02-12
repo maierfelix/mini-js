@@ -4,9 +4,10 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
  * src/index contains the compiler source, written in minimal/customized js
 
 ### Features:
-The compiler only offers two extra language feature to stay small and simple:
+The compiler only offers two extra language features to stay small and simple:
+<details>
+  <summary>**Pass by reference:**</summary>
 
-**Pass by reference:**
 ````js
 function swap(inout a, inout b) {
   let tmp = a;
@@ -32,7 +33,9 @@ console.log(test1.$iov, test2.$iov);
 swap(test1, test2); // swap both variables
 console.log(test1.$iov, test2.$iov);
 ````
-**Enums**:
+</details>
+<details>
+  <summary>**Enums**:</summary>
 ````js
 enum Direction {
   Up = 0,
@@ -54,8 +57,7 @@ var Direction;
 })(Direction || (Direction = {}));
 let dir = 0 || 3;
 ````
-Everything else is just plain minimal es5.
-
+</details>
 ### How it works:
 
 The first version of the compiler was written in very simple javascript, using only explicitly necessary language features. The compiler got extended more and more until it was able to parse the required subset of javascript language features, which are needed to parse and transform strings. In the next step the code generator got added which spits out plain javascript without any formatting. This code then turned into the stub file as well as remains our source file. Now it was easy to add new features to the source file. To add a new feature, we have to *blindly* extend the compiler without using the new feature in the compiling process, but we can test the new feature at the end of the source file. As soon as no errors gets thrown in the bootstrapping process, we can make use of our new added language feature directly inside our compiler source.
