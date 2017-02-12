@@ -4,7 +4,31 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
  * src/index contains the compiler source, written in minimal/customized js
 
 ### Features:
-The compiler only offers two extra language features to stay small and simple:
+The compiler only offers two language features on top to stay small and simple:
+<details>
+  <summary>**Enums**:</summary>
+````js
+enum Direction {
+  Up = 0,
+  Down,
+  Left,
+  Right
+}
+let dir = .Up || Direction.Right; // before compiling
+let dir = 0 || 3; // after compiling, unfolded
+````
+Compiles into:
+````js
+var Direction;
+(function(Direction) {
+  Direction[Direction['Up'] = 0] = 'Up';
+  Direction[Direction['Down'] = 1] = 'Down';
+  Direction[Direction['Left'] = 2] = 'Left';
+  Direction[Direction['Right'] = 3] = 'Right';
+})(Direction || (Direction = {}));
+let dir = 0 || 3;
+````
+</details>
 <details>
   <summary>**Pass by reference:**</summary>
 
@@ -32,30 +56,6 @@ let test2 = { $iov: 10 };
 console.log(test1.$iov, test2.$iov);
 swap(test1, test2); // swap both variables
 console.log(test1.$iov, test2.$iov);
-````
-</details>
-<details>
-  <summary>**Enums**:</summary>
-````js
-enum Direction {
-  Up = 0,
-  Down,
-  Left,
-  Right
-}
-let dir = .Up || Direction.Right; // before compiling
-let dir = 0 || 3; // after compiling, unfolded
-````
-Compiles into:
-````js
-var Direction;
-(function(Direction) {
-  Direction[Direction['Up'] = 0] = 'Up';
-  Direction[Direction['Down'] = 1] = 'Down';
-  Direction[Direction['Left'] = 2] = 'Left';
-  Direction[Direction['Right'] = 3] = 'Right';
-})(Direction || (Direction = {}));
-let dir = 0 || 3;
 ````
 </details>
 ### How it works:
