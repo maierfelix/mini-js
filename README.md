@@ -40,7 +40,7 @@ function swap(inout a, inout b) {
 let test1 = 5;
 let test2 = 10;
 console.log(test1, test2); // 5, 10
-swap(test1, test2);
+swap(test1, test2); // swap both variables
 console.log(test1, test2); // 10, 5
 ````
 Compiles into:
@@ -53,7 +53,7 @@ function swap(a, b) {
 let test1 = { $iov: 5 };
 let test2 = { $iov: 10 };
 console.log(test1.$iov, test2.$iov);
-swap(test1, test2); // swap both variables
+swap(test1, test2);
 console.log(test1.$iov, test2.$iov);
 ````
 </details>
