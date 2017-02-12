@@ -4,7 +4,35 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
  * src/index contains the compiler source, written in minimal/customized js
 
 ### Features:
-The compiler only offers one extra language feature (**enums**) to stay small and simple:
+The compiler only offers two extra language feature to stay small and simple:
+
+**Pass by reference:**
+````js
+function swap(inout a, inout b) {
+  let tmp = a;
+  a = b;
+  b = tmp;
+};
+let test1 = 5;
+let test2 = 10;
+console.log(test1, test2); // 5, 10
+swap(test1, test2);
+console.log(test1, test2); // 10, 5
+````
+Compiles into:
+````js
+function swap(a, b) {
+  let tmp = a.$iov;
+  a.$iov = b.$iov;
+  b.$iov = tmp;
+};
+let test1 = { $iov: 5 };
+let test2 = { $iov: 10 };
+console.log(test1.$iov, test2.$iov);
+swap(test1, test2); // swap both variables
+console.log(test1.$iov, test2.$iov);
+````
+**Enums**:
 ````js
 enum Direction {
   Up = 0,
@@ -14,6 +42,17 @@ enum Direction {
 }
 let dir = .Up || Direction.Right; // before compiling
 let dir = 0 || 3; // after compiling, unfolded
+````
+Compiles into:
+````js
+var Direction;
+(function(Direction) {
+  Direction[Direction['Up'] = 0] = 'Up';
+  Direction[Direction['Down'] = 1] = 'Down';
+  Direction[Direction['Left'] = 2] = 'Left';
+  Direction[Direction['Right'] = 3] = 'Right';
+})(Direction || (Direction = {}));
+let dir = 0 || 3;
 ````
 Everything else is just plain minimal es5.
 

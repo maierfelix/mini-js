@@ -77,7 +77,8 @@ enum TokenKind {
   NN_BREAK,
   NN_CONTINUE,
   NN_LITERAL,
-  NN_STRING_LITERAL
+  NN_STRING_LITERAL,
+  NN_INOUT
 };
 
 // ## HALP FUNCTIONS ##
@@ -319,7 +320,7 @@ function scan(str) {
     if (isAlpha(cc)) {
       let start = ii;
       while (true) {
-        if (!isAlpha(cc)) {
+        if (!isAlpha(cc) && !isNumber(cc)) {
           ii--;
           column--;
           break;
@@ -638,7 +639,19 @@ function parseFunctionParameters() {
   expect(.PP_LPAREN);
   while (true) {
     if (peek(.PP_RPAREN)) break;
-    params.push(current);
+    expectIdentifier();
+    if (current.value == "inout") {
+      next();
+      expectIdentifier();
+      current.isInout = true;
+      params.push(current);
+    } else {
+      current.isInout = false;
+      params.push(current);
+    }
+    let param = params[params.length - 1];
+    param.isParameter = true;
+    scope.register(param.value, param);
     next();
     if (!eat(.PP_COMMA)) break;
   };
@@ -809,6 +822,32 @@ function parseCallExpression(id) {
     callee: id,
     parameter: parseCallParameters()
   };
+  let resolve = scope.resolve(id.value);
+  if (resolve && resolve.kind == .NN_FUNCTION) {
+    let params = resolve.parameter;
+    let idx = 0;
+    params.map(function(item) {
+      let param = node.parameter[idx];
+      let loc = id.value + "::" + param.value;
+      if (item.isInout) {
+        if (param.kind != .NN_LITERAL) {
+          __imports.error("Function " + loc + " is inout and only accepts literals");
+        } else {
+          // now try to trace the variable declaration location as a later pointer
+          let resolve = scope.resolve(param.value);
+          if (resolve.kind != .NN_LET) {
+            __imports.error("Passing by reference in " + loc + " only accepts variables right now");
+          } else {
+            // trace as later reference
+            if (!resolve.isLaterReference) {
+              resolve.isLaterReference = true;
+            }
+          }
+        }
+      }
+      idx++;
+    });
+  }
   return (node);
 };
 
@@ -1027,6 +1066,7 @@ function generateNode(node) {
     if (node.id) write(node.id);
     write("(");
     let ii = 0;
+    pushScope(node);
     while (ii < node.parameter.length) {
       write(node.parameter[ii].value);
       if (ii + 1 < node.parameter.length) {
@@ -1038,12 +1078,21 @@ function generateNode(node) {
     write(" { ");
     generateBody(node.body);
     write(" } ");
+    popScope();
   }
   else if (kind == .NN_LET) {
+    let isLaterReference = node.isLaterReference;
     write("let ");
     write(node.id);
     write(" = ");
+    if (isLaterReference) {
+      write("{");
+      write("$iov:");
+    }
     generateNode(node.init);
+    if (isLaterReference) {
+      write("}");
+    }
   }
   else if (kind == .NN_CONST) {
     write("const ");
@@ -1058,11 +1107,15 @@ function generateNode(node) {
       write(")");
     }
     write(" { ");
+    pushScope(node.consequent);
     generateBody(node.consequent);
+    popScope();
     write(" } ");
     if (node.alternate) {
       write("else ");
+      pushScope(node.alternate);
       generateNode(node.alternate);
+      popScope();
     }
   }
   else if (kind == .NN_RETURN) {
@@ -1075,9 +1128,11 @@ function generateNode(node) {
     write("(");
     generateNode(node.condition);
     write(")");
+    pushScope(node);
     write(" {");
     generateBody(node.body);
     write(" } ");
+    popScope();
   }
   else if (kind == .NN_BREAK) {
     write("break");
@@ -1088,11 +1143,18 @@ function generateNode(node) {
     write("");
   }
   else if (kind == .NN_CALL_EXPRESSION) {
-    generateNode(node.callee);
+    let callee = node.callee;
+    let resolve = scope.resolve(callee.value);
+    generateNode(callee);
     write("(");
     let ii = 0;
     while (ii < node.parameter.length) {
-      generateNode(node.parameter[ii]);
+      // pass identifier by reference
+      if (resolve && resolve.parameter[ii].isInout) {
+        write(node.parameter[ii].value);
+      } else {
+        generateNode(node.parameter[ii]);
+      }
       if (ii + 1 < node.parameter.length) {
         write(", ");
       }
@@ -1165,7 +1227,16 @@ function generateNode(node) {
     write("]");
   }
   else if (kind == .NN_LITERAL) {
+    let resolve = scope.resolve(node.value);
     write(node.value);
+    if (resolve) {
+      if (resolve.isLaterReference) {
+        write(".$iov");
+      }
+      else if (resolve.isParameter && resolve.isInout) {
+        write(".$iov");
+      }
+    }
   }
   else if (kind == .NN_STRING_LITERAL) {
     let isChar = node.isChar;
