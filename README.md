@@ -5,8 +5,10 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
 
 ### Features:
 The compiler only offers two language features on top to stay small and simple:
+
 <details>
-  <summary>**Enums**:</summary>
+  <summary>Enums:</summary>
+
 ````js
 enum Direction {
   Up = 0,
@@ -29,7 +31,7 @@ let dir = 0 || 3;
 ````
 </details>
 <details>
-  <summary>**Pass by reference:**</summary>
+  <summary>Pass by reference:</summary>
 
 ````js
 function swap(inout a, inout b) {
@@ -78,4 +80,6 @@ compiler.compile("const a = 10;", {
 });
 ````
 
-See [toy-compiler](https://github.com/maierfelix/toy-compiler) for a more extended version offering classes, a simple preprocessor etc.
+See [toy-compiler](https://github.com/maierfelix/toy-compiler) for a more extended version offering classes and a simple preprocessor.
+
+Another compile-to-js project is [this](https://github.com/maierfelix/hevia-compiler) one, which offers a [Swift](https://developer.apple.com/swift/)-like language with type inference, custom operators, pass-by-reference etc.
