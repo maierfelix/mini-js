@@ -4,35 +4,11 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
  * src/index contains the compiler source, written in minimal/customized js
 
 ### Features:
-The compiler only offers two extra language feature to stay small and simple:
+The compiler only offers two language features on top to stay small and simple:
 
-**Pass by reference:**
-````js
-function swap(inout a, inout b) {
-  let tmp = a;
-  a = b;
-  b = tmp;
-};
-let test1 = 5;
-let test2 = 10;
-console.log(test1, test2); // 5, 10
-swap(test1, test2);
-console.log(test1, test2); // 10, 5
-````
-Compiles into:
-````js
-function swap(a, b) {
-  let tmp = a.$iov;
-  a.$iov = b.$iov;
-  b.$iov = tmp;
-};
-let test1 = { $iov: 5 };
-let test2 = { $iov: 10 };
-console.log(test1.$iov, test2.$iov);
-swap(test1, test2); // swap both variables
-console.log(test1.$iov, test2.$iov);
-````
-**Enums**:
+<details>
+  <summary>Enums:</summary>
+
 ````js
 enum Direction {
   Up = 0,
@@ -40,8 +16,7 @@ enum Direction {
   Left,
   Right
 }
-let dir = .Up || Direction.Right; // before compiling
-let dir = 0 || 3; // after compiling, unfolded
+let dir = .Up || Direction.Right;
 ````
 Compiles into:
 ````js
@@ -54,7 +29,40 @@ var Direction;
 })(Direction || (Direction = {}));
 let dir = 0 || 3;
 ````
-Everything else is just plain minimal es5.
+</details>
+<details>
+  <summary>Pass by reference:</summary>
+
+````js
+// variables get passed by value in js -
+// with 'inout' we tell the compiler to transform our variable into a object,
+// since objects are getting passed by reference. All following variable
+// accesses get transformed to point to the object's value property
+function swap(inout a, inout b) {
+  let tmp = a;
+  a = b;
+  b = tmp;
+};
+let test1 = 5;
+let test2 = 10;
+console.log(test1, test2); // 5, 10
+swap(test1, test2); // swap both variables
+console.log(test1, test2); // 10, 5
+````
+Compiles into:
+````js
+function swap(a, b) {
+  let tmp = a.$iov;
+  a.$iov = b.$iov;
+  b.$iov = tmp;
+};
+let test1 = { $iov: 5 };
+let test2 = { $iov: 10 };
+console.log(test1.$iov, test2.$iov);
+swap(test1, test2);
+console.log(test1.$iov, test2.$iov); // much hax
+````
+</details>
 
 ### How it works:
 
@@ -77,4 +85,6 @@ compiler.compile("const a = 10;", {
 });
 ````
 
-See [toy-compiler](https://github.com/maierfelix/toy-compiler) for a more extended version offering classes, a simple preprocessor etc.
+See [toy-compiler](https://github.com/maierfelix/toy-compiler) for a more extended version offering classes and a simple preprocessor.
+
+Another compile-to-js project is [this](https://github.com/maierfelix/hevia-compiler) one, which offers a [Swift](https://developer.apple.com/swift/)-like language with type inference, custom operators, pass-by-reference etc.

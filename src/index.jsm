@@ -293,7 +293,7 @@ function scan(str) {
     column++;
   };
 
-  // placed here to have right context to next()
+  // placed here to have correct context to next()
   function processOperator(ch, second, line, column) {
     if (second && isOperator(ch + second)) {
       next();
@@ -413,6 +413,7 @@ function Scope() {
     if (this.symbols[id]) {
       return (this.symbols[id]);
     } else {
+      // recursively search symbol inside parent
       if (this.parent) {
         return (this.parent.resolve(id));
       }
