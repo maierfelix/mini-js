@@ -5,7 +5,6 @@ This is a tiny (~1k LOC) self-hosted compiler, which is able to compile itself.
 
 ### Features:
 The compiler only offers two language features on top to stay small and simple:
-<<<<<<< HEAD
 
 <details>
   <summary>Enums:</summary>
@@ -20,36 +19,6 @@ enum Direction {
 let dir = .Up || Direction.Right;
 ````
 Compiles into:
-=======
-
-<details>
-  <summary>Enums:</summary>
-
-````js
-enum Direction {
-  Up = 0,
-  Down,
-  Left,
-  Right
-}
-let dir = .Up || Direction.Right;
-````
-Compiles into:
-````js
-var Direction;
-(function(Direction) {
-  Direction[Direction['Up'] = 0] = 'Up';
-  Direction[Direction['Down'] = 1] = 'Down';
-  Direction[Direction['Left'] = 2] = 'Left';
-  Direction[Direction['Right'] = 3] = 'Right';
-})(Direction || (Direction = {}));
-let dir = 0 || 3;
-````
-</details>
-<details>
-  <summary>Pass by reference:</summary>
-
->>>>>>> origin/master
 ````js
 var Direction;
 (function(Direction) {
@@ -91,11 +60,7 @@ let test1 = { $iov: 5 };
 let test2 = { $iov: 10 };
 console.log(test1.$iov, test2.$iov);
 swap(test1, test2);
-<<<<<<< HEAD
 console.log(test1.$iov, test2.$iov); // much hax
-=======
-console.log(test1.$iov, test2.$iov);
->>>>>>> origin/master
 ````
 </details>
 
@@ -122,8 +87,4 @@ compiler.compile("const a = 10;", {
 
 See [toy-compiler](https://github.com/maierfelix/toy-compiler) for a more extended version offering classes and a simple preprocessor.
 
-<<<<<<< HEAD
 Another compile-to-js project is [this](https://github.com/maierfelix/hevia-compiler) one, which offers a [Swift](https://developer.apple.com/swift/)-like language with type inference, custom operators, pass-by-reference etc.
-=======
-Another compile-to-js project is [this](https://github.com/maierfelix/hevia-compiler) one, which offers a [Swift](https://developer.apple.com/swift/)-like language with type inference, custom operators, pass-by-reference etc.
->>>>>>> origin/master
