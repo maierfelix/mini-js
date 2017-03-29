@@ -17,7 +17,7 @@ node build
 ##### Pass by reference:
 ````js
 // variables get passed by value in js -
-// with 'inout' we tell the compiler to transform passed in variables into a referenceable object before
+// with 'inout' we tell the compiler to transform passed in variables into referenceable objects
 function swap(inout a, inout b) {
   let tmp = a;
   a = b;
