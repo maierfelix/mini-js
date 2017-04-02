@@ -1,7 +1,7 @@
 This is an experimental source-to-source compiler that understands basic JavaScript and offers two extra language features on top. The compiler is bootstrapped (able to compile itself) and written in only 1k lines of code.
 
 I created this project to give a basic, not too much 
-time-consuming overview, how source-to-source compilers like [Babel](https://github.com/babel/babel) work behind the scenes.
+time-consuming overview, how compilers like [Babel](https://github.com/babel/babel) work behind the scenes.
 
 ### Overview:
 ````bin/stub```` contains the latest generated version (the "compiler.exe")  
@@ -16,7 +16,7 @@ node build
 
 ##### Pass by reference:
 ````js
-// variables get passed by value in js -
+// variables with native types get passed by value in js -
 // with 'inout' we tell the compiler to transform passed in variables into referenceable objects
 function swap(inout a, inout b) {
   let tmp = a;
