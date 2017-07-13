@@ -1047,6 +1047,7 @@ function write(str) {
 };
 
 function generate(node) {
+  out = "";
   generateBody(node.body);
   return (out);
 };

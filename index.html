@@ -1,0 +1,75 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="http://esironal.github.io/cmtouch/lib/codemirror.css">
+    <script src="http://esironal.github.io/cmtouch/lib/codemirror.js"></script>
+    <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
+  </head>
+  <body>
+
+    <div id="input"></div>
+    <div id="output"></div>
+
+    <!-- module exports poly -->
+    <script>
+    let module = {
+      exports: {}
+    };
+    </script>
+    <script type="text/javascript" src="bin/stub.js"></script>
+
+    <script>
+      let editorin = CodeMirror(document.getElementById("input"), {
+        mode: "text/javascript",
+        lineNumbers: true,
+        value: "",
+        width: 250
+      });
+      let editorout = CodeMirror(document.getElementById("output"), {
+        mode: "text/javascript",
+        lineNumbers: true,
+        value: ""
+      });
+      let docin = editorin.getDoc();
+      let docout = editorout.getDoc();
+      docin.on("change", function(cm, change) {
+        let value = docin.getValue();
+        let compile = module.exports.compile;
+        let result = compile(value);
+        docout.setValue(result);
+        eval(result);
+      });
+    </script>
+
+    <!--  -->
+    <script>
+      docin.setValue(`function swap(inout a, inout b) {
+  let tmp = a;
+  a = b;
+  b = tmp;
+};
+
+let test1 = 5;
+let test2 = 10;
+
+console.log(test1, test2);
+
+swap(test1, test2);
+
+console.log(test1, test2);
+`);
+    </script>
+
+    <iframe src="https://ghbtns.com/github-btn.html?user=maierfelix&amp;repo=mini-js&amp;type=star&amp;count=true&amp;size=medium" frameborder="0" scrolling="0" height="30px" style="position: absolute;right: 0px;top: 5px;width: 89px;"></iframe>
+
+    <style>
+    #input, #output {
+      position: absolute;
+      width: 375px;
+    }
+    #output {
+      left: 385px;
+    }
+    </style>
+
+  </body>
+</html>
