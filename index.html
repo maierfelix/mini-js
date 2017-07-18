@@ -70,6 +70,77 @@ console.log(test1, test2);
       left: 385px;
     }
     </style>
+<!-- README -->
+<div style="position: absolute; top: 300px;width: 80%;">
+<p>This is an experimental source-to-source compiler that understands basic JavaScript and offers two extra language features on top. The compiler is bootstrapped (able to compile itself) and written in only 1k lines of code.</p>
+<p>I created this project to give a basic, not too much<br>
+time-consuming overview, how compilers like <a href="https://github.com/babel/babel">Babel</a> work behind the scenes.</p>
+<h3><a id="Overview_5"></a>Overview:</h3>
+<p><code>bin/stub</code> contains the latest generated version (the “compiler.exe”)<br>
+<code>src/index</code> contains the compiler source code we can edit (gets compiled by our stub)</p>
+<h3><a id="Usage_9"></a>Usage:</h3>
+<pre><code class="language-c">node build
+</code></pre>
+<h3><a id="Features_14"></a>Features:</h3>
+<h5><a id="Pass_by_reference_16"></a>Pass by reference:</h5>
+<pre><code class="language-js"><span class="hljs-comment">// variables with native types get passed by value in js -</span>
+<span class="hljs-comment">// with 'inout' we tell the compiler to transform passed in variables into referenceable objects</span>
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">swap</span>(<span class="hljs-params">inout a, inout b</span>) </span>{
+  <span class="hljs-keyword">let</span> tmp = a;
+  a = b;
+  b = tmp;
+};
+<span class="hljs-keyword">let</span> test1 = <span class="hljs-number">5</span>;
+<span class="hljs-keyword">let</span> test2 = <span class="hljs-number">10</span>;
+<span class="hljs-built_in">console</span>.log(test1, test2); <span class="hljs-comment">// 5, 10</span>
+swap(test1, test2); <span class="hljs-comment">// swap both variables</span>
+<span class="hljs-built_in">console</span>.log(test1, test2); <span class="hljs-comment">// 10, 5</span>
+</code></pre>
+<p>Compiles into:</p>
+<pre><code class="language-js"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">swap</span>(<span class="hljs-params">a, b</span>) </span>{
+  <span class="hljs-keyword">let</span> tmp = a.$iov;
+  a.$iov = b.$iov;
+  b.$iov = tmp;
+};
+<span class="hljs-keyword">let</span> test1 = { $iov: <span class="hljs-number">5</span> };
+<span class="hljs-keyword">let</span> test2 = { $iov: <span class="hljs-number">10</span> };
+<span class="hljs-built_in">console</span>.log(test1.$iov, test2.$iov); <span class="hljs-comment">// here we point to the variable's value</span>
+swap(test1, test2); <span class="hljs-comment">// here we pass the variable's reference</span>
+<span class="hljs-built_in">console</span>.log(test1.$iov, test2.$iov); <span class="hljs-comment">// much hax</span>
+</code></pre>
+<h5><a id="Enums_44"></a>Enums:</h5>
+<pre><code class="language-js">enum Direction {
+  Up = <span class="hljs-number">0</span>,
+  Down,
+  Left,
+  Right
+}
+<span class="hljs-keyword">let</span> dir = .Up || Direction.Right;
+</code></pre>
+<p>Compiles into:</p>
+<pre><code class="language-js"><span class="hljs-keyword">var</span> Direction;
+(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">Direction</span>) </span>{
+  Direction[Direction[<span class="hljs-string">'Up'</span>] = <span class="hljs-number">0</span>] = <span class="hljs-string">'Up'</span>;
+  Direction[Direction[<span class="hljs-string">'Down'</span>] = <span class="hljs-number">1</span>] = <span class="hljs-string">'Down'</span>;
+  Direction[Direction[<span class="hljs-string">'Left'</span>] = <span class="hljs-number">2</span>] = <span class="hljs-string">'Left'</span>;
+  Direction[Direction[<span class="hljs-string">'Right'</span>] = <span class="hljs-number">3</span>] = <span class="hljs-string">'Right'</span>;
+})(Direction || (Direction = {}));
+<span class="hljs-keyword">let</span> dir = <span class="hljs-number">0</span> || <span class="hljs-number">3</span>;
+</code></pre>
+<h3><a id="How_it_works_66"></a>How it works:</h3>
+<p>The first version of the compiler was written in very simple javascript, using only explicitly necessary language features. The compiler got extended more and more until it was able to parse the required subset of javascript language features, which are needed to parse and transform strings. In the next step the code generator got added which spits out plain javascript without any formatting. This code then turned into the stub file as well as remains our source file. Now it was easy to add new features to the source file. To add a new feature, we have to <em>blindly</em> extend the compiler without using the new feature in the compiling process, but we can test the new feature at the end of the source file. As soon as no errors gets thrown in the bootstrapping process, we can make use of our new added language feature directly inside our compiler source.</p>
+<h3><a id="Stub_usage_70"></a>Stub usage:</h3>
+<pre><code class="language-js"><span class="hljs-keyword">let</span> compiler = <span class="hljs-built_in">require</span>(<span class="hljs-string">"./bin/stub"</span>);
+compiler.compile(<span class="hljs-string">"const a = 10;"</span>, {
+  <span class="hljs-built_in">console</span>: <span class="hljs-built_in">console</span>, <span class="hljs-comment">// uses log and error method</span>
+  error: <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">msg</span>) </span>{
+    <span class="hljs-built_in">console</span>.error(<span class="hljs-string">"Error: "</span> + msg); <span class="hljs-comment">// wat happens on a error</span>
+  }
+});
+</code></pre>
+<p>See <a href="https://github.com/maierfelix/toy-compiler">toy-compiler</a> for a more extended version offering classes and a simple preprocessor.</p>
+<p>Another compile-to-js project is <a href="https://github.com/maierfelix/hevia-compiler">this</a> one, which offers a <a href="https://developer.apple.com/swift/">Swift</a>-like language with type inference, custom operators, pass-by-reference etc.</p>
+</div>
 
   </body>
 </html>
