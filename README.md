@@ -66,7 +66,7 @@ let dir = 0 || 3;
 
 ### How it works:
 
-The first version of the compiler was written in very simple javascript, using only explicitly necessary language features. The compiler got extended more and more until it was able to parse the required subset of javascript language features, which are needed to parse and transform strings. In the next step the code generator got added which spits out plain javascript without any formatting. This code then turned into the stub file as well as remains our source file. Now it was easy to add new features to the source file. To add a new feature, we have to *blindly* extend the compiler without using the new feature in the compiling process, but we can test the new feature at the end of the source file. As soon as no errors gets thrown in the bootstrapping process, we can make use of our new added language feature directly inside our compiler source.
+The first version of the compiler was written in very simple javascript, using only explicitly necessary language features. The compiler got extended more and more until it was able to parse the required subset of javascript language features, which are needed to parse and transform strings. In the next step the code generator got added which spits out plain javascript without any formatting. This code then turned into the stub file as well as remains our source file.
 
 ### Stub usage:
 ````js
